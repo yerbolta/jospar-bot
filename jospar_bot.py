@@ -8,7 +8,7 @@ import requests
 import os
 import time
 
-BOT_TOKEN = os.environ.get("BOT_TOKEN", "8770606231:AAHbggvbON7G6HUHMV80KhI7Q6lBQ0jO8BI")
+BOT_TOKEN = os.environ.get("BOT_TOKEN", "8935289424:AAFgsfrBMWZx_7zvVvnWlh_qU2kprueYj1c")
 OWNER_CHAT_ID = os.environ.get("OWNER_CHAT_ID", "217420681")
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "https://vperfytwmwrffkgkiwqz.supabase.co")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZwZXJmeXR3bXdyZmZrZ2tpd3F6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE2NTk3OTcsImV4cCI6MjA5NzIzNTc5N30.xx8OBH_BLeTyRs75FfpxyUbHze3qcq3gpIutLjMDb7E")
