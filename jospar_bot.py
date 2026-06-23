@@ -22,7 +22,7 @@ def api(method, data=None):
     headers = {"Content-Type": "application/json"} if body else {}
     req = urllib.request.Request(url, data=body, headers=headers)
     try:
-        with urllib.request.urlopen(req, timeout=15) as r:
+        with urllib.request.urlopen(req, timeout=10) as r:
             return json.loads(r.read())
     except Exception as e:
         print(f"API error {method}: {e}")
@@ -75,7 +75,7 @@ def poll():
 
     while True:
         try:
-            result = api("getUpdates", {"offset": offset, "timeout": 30, "allowed_updates": ["message"]})
+            result = api("getUpdates", {"offset": offset, "timeout": 5, "allowed_updates": ["message"]})
             updates = result.get("result", [])
 
             for upd in updates:
@@ -102,7 +102,7 @@ def poll():
             break
         except Exception as e:
             print(f"Error: {e}")
-            time.sleep(5)
+            time.sleep(2)
 
 
 if __name__ == "__main__":
