@@ -105,7 +105,8 @@ def handle_ok(project_num):
         query["dwg"] = dwg_url
     download_link = f"https://jospar.vercel.app/download/{folder}?{urlencode(query)}"
 
-    text = f"Oplata podtverzhdena - №{num}\n{caption}\nSsylka (48 chasov):\n{download_link}\n\nSkopiruy i otprav klientu v WhatsApp"
+    wa_text = f"Төлем расталды! Жүктеу сілтемесі (48 сағат қолжетімді):\n{download_link}"
+    text = f"Oplata podtverzhdena - №{num}\n{caption}\n--- Klientu v WhatsApp ---\n{wa_text}"
     send(OWNER_CHAT_ID, text)
 
 
