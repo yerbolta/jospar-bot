@@ -4,9 +4,7 @@ JOSPAR — Telegram Bot
 /leads     — poslednie zayavki
 """
 
-import urllib.request
-import urllib.parse
-import json
+import requests
 import os
 import time
 
@@ -15,36 +13,31 @@ OWNER_CHAT_ID = os.environ.get("OWNER_CHAT_ID", "217420681")
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "https://vperfytwmwrffkgkiwqz.supabase.co")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZwZXJmeXR3bXdyZmZrZ2tpd3F6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE2NTk3OTcsImV4cCI6MjA5NzIzNTc5N30.xx8OBH_BLeTyRs75FfpxyUbHze3qcq3gpIutLjMDb7E")
 
-
-def api(method, data=None):
-    url = f"https://api.telegram.org/bot{BOT_TOKEN}/{method}"
-    body = json.dumps(data).encode() if data else None
-    headers = {"Content-Type": "application/json"} if body else {}
-    req = urllib.request.Request(url, data=body, headers=headers)
-    try:
-        with urllib.request.urlopen(req, timeout=10) as r:
-            return json.loads(r.read())
-    except Exception as e:
-        print(f"API error {method}: {e}")
-        return {}
+BASE = f"https://api.telegram.org/bot{BOT_TOKEN}"
+SESSION = requests.Session()
 
 
 def send(chat_id, text):
-    api("sendMessage", {"chat_id": chat_id, "text": text, "parse_mode": "HTML"})
+    try:
+        SESSION.post(f"{BASE}/sendMessage", json={
+            "chat_id": chat_id, "text": text, "parse_mode": "HTML"
+        }, timeout=10)
+    except Exception as e:
+        print(f"send error: {e}")
 
 
 def get_project(num):
-    url = f"{SUPABASE_URL}/rest/v1/projects?id=like.{num}%25&select=id,name,area,price"
-    req = urllib.request.Request(url, headers={
-        "apikey": SUPABASE_KEY,
-        "Authorization": f"Bearer {SUPABASE_KEY}",
-    })
     try:
-        with urllib.request.urlopen(req, timeout=10) as r:
-            rows = json.loads(r.read())
-            return rows[0] if rows else None
+        r = SESSION.get(
+            f"{SUPABASE_URL}/rest/v1/projects",
+            params={"id": f"like.{num}%", "select": "id,name,area,price"},
+            headers={"apikey": SUPABASE_KEY, "Authorization": f"Bearer {SUPABASE_KEY}"},
+            timeout=10
+        )
+        rows = r.json()
+        return rows[0] if rows else None
     except Exception as e:
-        print(f"Supabase error: {e}")
+        print(f"supabase error: {e}")
         return None
 
 
@@ -63,7 +56,6 @@ def handle_ok(project_num):
         caption = ""
 
     download_page = f"https://jospar.vercel.app/download/{folder}"
-
     text = f"Oplata podtverzhdena - №{num}\n{caption}\nSsylka dlya klienta:\n{download_page}\n\nSkopiruy i otprav klientu v WhatsApp"
     send(OWNER_CHAT_ID, text)
 
@@ -71,12 +63,16 @@ def handle_ok(project_num):
 def poll():
     offset = 0
     print("JOSPAR bot started.")
-    send(OWNER_CHAT_ID, "JOSPAR bot zapushchen.\n/ok <nomer> - ssylka na skachivanie\n/leads - zayavki")
+    send(OWNER_CHAT_ID, "JOSPAR bot zapushchen.\n/ok 1 - ssylka na plan №001\n/leads - poslednie zayavki")
 
     while True:
         try:
-            result = api("getUpdates", {"offset": offset, "timeout": 5, "allowed_updates": ["message"]})
-            updates = result.get("result", [])
+            r = SESSION.get(
+                f"{BASE}/getUpdates",
+                params={"offset": offset, "timeout": 20, "allowed_updates": ["message"]},
+                timeout=25
+            )
+            updates = r.json().get("result", [])
 
             for upd in updates:
                 offset = upd["update_id"] + 1
@@ -90,19 +86,19 @@ def poll():
                 if text.startswith("/ok"):
                     parts = text.split()
                     if len(parts) < 2:
-                        send(OWNER_CHAT_ID, "Ukazi nomer proekta: /ok 15")
+                        send(OWNER_CHAT_ID, "Ukazi nomer: /ok 1")
                     else:
                         handle_ok(parts[1])
 
                 elif text == "/leads":
-                    send(OWNER_CHAT_ID, "Zayavki: smotri leads.json na servere")
+                    send(OWNER_CHAT_ID, "Zayavki: smotri leads.json")
 
         except KeyboardInterrupt:
             print("Bot stopped.")
             break
         except Exception as e:
             print(f"Error: {e}")
-            time.sleep(2)
+            time.sleep(3)
 
 
 if __name__ == "__main__":
