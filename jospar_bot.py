@@ -73,20 +73,9 @@ def handle_ok(project_num):
         folder = num
         caption = ""
 
-    pdf_url = get_signed_url(folder, "full.pdf")
-    dwg_url = get_signed_url(folder, "full.dwg")
+    download_link = f"https://jospar.vercel.app/download/{folder}"
 
-    if not pdf_url:
-        send(OWNER_CHAT_ID, f"Oshibka: fayly dlya №{num} ne naydeny v Supabase")
-        return
-
-    from urllib.parse import urlencode
-    query = {"pdf": pdf_url}
-    if dwg_url:
-        query["dwg"] = dwg_url
-    download_link = f"https://jospar.vercel.app/download/{folder}?{urlencode(query)}"
-
-    text = f"Oplata podtverzhdena - №{num}\n{caption}\nSsylka dlya klienta (48 chasov):\n{download_link}\n\nSkopiruy i otprav klientu v WhatsApp"
+    text = f"Oplata podtverzhdena - №{num}\n{caption}\nSsylka dlya klienta:\n{download_link}\n\nSkopiruy i otprav klientu v WhatsApp"
     send(OWNER_CHAT_ID, text)
 
 
