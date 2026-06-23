@@ -41,6 +41,24 @@ def get_project(num):
         return None
 
 
+def get_signed_url(folder, filename, expires=172800):
+    try:
+        r = SESSION.post(
+            f"{SUPABASE_URL}/storage/v1/object/sign/plans/{folder}/{filename}",
+            json={"expiresIn": expires},
+            headers={"apikey": SUPABASE_KEY, "Authorization": f"Bearer {SUPABASE_KEY}"},
+            timeout=10
+        )
+        data = r.json()
+        signed = data.get("signedURL") or data.get("signedUrl") or data.get("signed_url")
+        if signed:
+            return f"{SUPABASE_URL}/storage/v1{signed}" if not signed.startswith("http") else signed
+        return None
+    except Exception as e:
+        print(f"signed url error: {e}")
+        return None
+
+
 def handle_ok(project_num):
     num = project_num.zfill(3)
     project = get_project(num)
@@ -55,8 +73,14 @@ def handle_ok(project_num):
         folder = num
         caption = ""
 
-    download_page = f"https://jospar.vercel.app/download/{folder}"
-    text = f"Oplata podtverzhdena - №{num}\n{caption}\nSsylka dlya klienta:\n{download_page}\n\nSkopiruy i otprav klientu v WhatsApp"
+    pdf_url = get_signed_url(folder, "full.pdf")
+    dwg_url = get_signed_url(folder, "full.dwg")
+
+    if not pdf_url:
+        send(OWNER_CHAT_ID, f"Oshibka: fayly dlya №{num} ne naydeny v Supabase")
+        return
+
+    text = f"Oplata podtverzhdena - №{num}\n{caption}\nSsylki dlya klienta (48 chasov):\n\nPDF: {pdf_url}\n\nDWG: {dwg_url or '—'}\n\nSkopiruy i otprav klientu v WhatsApp"
     send(OWNER_CHAT_ID, text)
 
 
