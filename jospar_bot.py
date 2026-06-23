@@ -80,7 +80,13 @@ def handle_ok(project_num):
         send(OWNER_CHAT_ID, f"Oshibka: fayly dlya №{num} ne naydeny v Supabase")
         return
 
-    text = f"Oplata podtverzhdena - №{num}\n{caption}\nSsylki dlya klienta (48 chasov):\n\nPDF: {pdf_url}\n\nDWG: {dwg_url or '—'}\n\nSkopiruy i otprav klientu v WhatsApp"
+    from urllib.parse import urlencode
+    query = {"pdf": pdf_url}
+    if dwg_url:
+        query["dwg"] = dwg_url
+    download_link = f"https://jospar.vercel.app/download/{folder}?{urlencode(query)}"
+
+    text = f"Oplata podtverzhdena - №{num}\n{caption}\nSsylka dlya klienta (48 chasov):\n{download_link}\n\nSkopiruy i otprav klientu v WhatsApp"
     send(OWNER_CHAT_ID, text)
 
 
