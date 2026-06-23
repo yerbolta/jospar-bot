@@ -12,6 +12,7 @@ BOT_TOKEN = os.environ.get("BOT_TOKEN", "8935289424:AAFgsfrBMWZx_7zvVvnWlh_qU2kp
 OWNER_CHAT_ID = os.environ.get("OWNER_CHAT_ID", "217420681")
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "https://vperfytwmwrffkgkiwqz.supabase.co")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZwZXJmeXR3bXdyZmZrZ2tpd3F6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE2NTk3OTcsImV4cCI6MjA5NzIzNTc5N30.xx8OBH_BLeTyRs75FfpxyUbHze3qcq3gpIutLjMDb7E")
+SUPABASE_SERVICE_KEY = os.environ.get("SUPABASE_SERVICE_KEY", "")
 
 BASE = f"https://api.telegram.org/bot{BOT_TOKEN}"
 SESSION = requests.Session()
@@ -59,6 +60,24 @@ def get_signed_url(folder, filename, expires=172800):
         return None
 
 
+def get_signed_url(folder, filename, expires=172800):
+    try:
+        r = SESSION.post(
+            f"{SUPABASE_URL}/storage/v1/object/sign/plans/{folder}/{filename}",
+            json={"expiresIn": expires},
+            headers={"apikey": SUPABASE_SERVICE_KEY, "Authorization": f"Bearer {SUPABASE_SERVICE_KEY}"},
+            timeout=10
+        )
+        data = r.json()
+        signed = data.get("signedURL") or data.get("signedUrl")
+        if signed:
+            return f"{SUPABASE_URL}/storage/v1{signed}" if not signed.startswith("http") else signed
+        return None
+    except Exception as e:
+        print(f"signed url error: {e}")
+        return None
+
+
 def handle_ok(project_num):
     num = project_num.zfill(3)
     project = get_project(num)
@@ -73,9 +92,20 @@ def handle_ok(project_num):
         folder = num
         caption = ""
 
-    download_link = f"https://jospar.vercel.app/download/{folder}"
+    pdf_url = get_signed_url(folder, "full.pdf")
+    dwg_url = get_signed_url(folder, "full.dwg")
 
-    text = f"Oplata podtverzhdena - №{num}\n{caption}\nSsylka dlya klienta:\n{download_link}\n\nSkopiruy i otprav klientu v WhatsApp"
+    if not pdf_url:
+        send(OWNER_CHAT_ID, f"Oshibka: fayly dlya №{num} ne naydeny")
+        return
+
+    from urllib.parse import urlencode
+    query = {"pdf": pdf_url}
+    if dwg_url:
+        query["dwg"] = dwg_url
+    download_link = f"https://jospar.vercel.app/download/{folder}?{urlencode(query)}"
+
+    text = f"Oplata podtverzhdena - №{num}\n{caption}\nSsylka (48 chasov):\n{download_link}\n\nSkopiruy i otprav klientu v WhatsApp"
     send(OWNER_CHAT_ID, text)
 
 
